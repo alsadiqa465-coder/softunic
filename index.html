@@ -79,10 +79,26 @@ footer{text-align:center;color:var(--muted);padding:26px;border-top:2px dashed v
 .order{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--paper);border:1.5px solid var(--line);border-radius:14px;padding:12px 16px;margin-bottom:10px}
 @media print{header,footer,.actions,#dstate,#fake{display:none}body{background:#fff}}
 
+.badge{display:inline-block;min-width:1.5em;padding:0 .45em;border-radius:999px;background:var(--thread);color:#fff;font-size:.8rem;text-align:center;margin-left:3px}
+nav a{margin-left:14px}
+.qty{display:flex;justify-content:space-between;align-items:center;margin:0 0 14px}
+.stepper{display:inline-flex;align-items:center;gap:6px;background:var(--bg);border-radius:999px;padding:3px}
+.stepper button{padding:4px 13px;background:var(--paper);font-size:1.1rem;line-height:1.2}
+.stepper output{min-width:2ch;text-align:center;font-weight:700;font-variant-numeric:tabular-nums}
+.mactions{flex-wrap:wrap}
+.crow{display:grid;grid-template-columns:52px 1fr auto auto;gap:12px;align-items:center;padding:12px 0;border-bottom:1.5px dashed var(--line)}
+.crow:last-child{border-bottom:0}
+.cthumb{width:52px;height:52px;border-radius:12px;display:grid;place-items:center;font-size:1.6rem}
+.lt{font-weight:800;font-variant-numeric:tabular-nums;min-width:5.5em;text-align:right}
+.rm{grid-column:2/-1;justify-self:start;padding:4px 12px;font-size:.82rem}
+.btn{display:block;text-align:center;text-decoration:none;border-radius:999px;padding:12px 22px;font-weight:600;margin-top:10px}
+.toast{position:fixed;left:50%;bottom:calc(24px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);background:var(--ink);color:var(--bg);padding:10px 20px;border-radius:999px;opacity:0;pointer-events:none;transition:.25s;z-index:9}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+@media(max-width:560px){.crow{grid-template-columns:44px 1fr auto}.lt{grid-column:2;text-align:left}.rm{grid-column:3;justify-self:end}}
 </style>
 </head>
 <body>
-<header><a class="logo" href="#/">Soft<span>Tunic</span></a><nav><a href="#/">Games</a> &nbsp; <a href="#/receipt">My purchases</a></nav></header>
+<header><a class="logo" href="#/">Soft<span>Tunic</span></a><nav><a href="#/">Games</a><a href="#/cart">Cart <span class="badge" id="cbadge" hidden>0</span></a><a href="#/receipt">My purchases</a></nav></header>
 <section id="v-home">
 <section class="hero">
   <h1>Games made to be worn in.</h1>
@@ -98,6 +114,23 @@ footer{text-align:center;color:var(--muted);padding:26px;border-top:2px dashed v
 <div class="count" id="count" aria-live="polite"></div>
 <main class="grid" id="grid"></main>
 <div class="more"><button class="ghost" id="more">Show more games</button></div>
+</section>
+<section id="v-cart" hidden>
+<main class="wrap">
+  <h1>Your cart</h1>
+  <div class="co">
+    <div class="panel" id="clist"></div>
+    <aside class="panel">
+      <h2>Summary</h2>
+      <div class="sumrow"><span>Subtotal</span><span id="ksub"></span></div>
+      <div class="sumrow"><span>VAT (7.5%)</span><span id="ktax"></span></div>
+      <div class="sumrow t"><span>Total</span><span id="ktotal"></span></div>
+      <a class="btn primary" id="kgo" href="#/checkout">Proceed to checkout</a>
+      <a class="btn ghost" href="#/">Keep shopping</a>
+      <p class="note">Each unit is one licence key. A key locks to the first laptop that downloads it. Up to 10 units per game.</p>
+    </aside>
+  </div>
+</main>
 </section>
 <section id="v-checkout" hidden>
 <main class="wrap">
@@ -118,19 +151,17 @@ footer{text-align:center;color:var(--muted);padding:26px;border-top:2px dashed v
         <div class="field"><label for="exp">Expiry (MM/YY)</label><input id="exp" inputmode="numeric" placeholder="MM/YY" maxlength="5" autocomplete="off"></div>
         <div class="field"><label for="cvv">CVV</label><input id="cvv" inputmode="numeric" type="password" placeholder="3 digits" maxlength="4" autocomplete="off"></div>
       </div>
-      <label class="note"><input type="checkbox" id="terms"> I agree that this licence is locked to this laptop and cannot be shared.</label>
+      <label class="note"><input type="checkbox" id="terms"> I agree that each licence key locks to the first laptop that downloads it and cannot be shared.</label>
       <button class="primary" id="pay" style="width:100%;font-size:1.05rem">Pay</button>
       <p class="note">Demo only: no real payment is made and card details are never saved or sent anywhere. <button type="button" class="ghost" id="fill" style="padding:4px 12px;font-size:.85rem">Fill test details</button></p>
     </form>
     <aside class="panel">
       <h2>Order summary</h2>
-      <div class="cover" id="ccover" style="border-radius:12px;margin-bottom:12px"><i id="cicon" aria-hidden="true"></i></div>
-      <div id="cname" style="font-weight:800;font-size:1.1rem"></div>
-      <div class="tag" id="ctag" style="margin-bottom:12px"></div>
-      <div class="sumrow"><span>Game price</span><span id="csub"></span></div>
+      <div id="clines"></div>
+      <div class="sumrow"><span>Subtotal</span><span id="csub"></span></div>
       <div class="sumrow"><span>VAT (7.5%)</span><span id="ctax"></span></div>
       <div class="sumrow t"><span>Total to pay</span><span id="ctotal"></span></div>
-      <p class="note">Your licence will be locked to this laptop: <b id="cdev"></b></p>
+      <p class="note">Each unit is one licence key. A key locks to the first laptop that downloads it. <a href="#/cart">Edit cart</a></p>
     </aside>
   </div>
 </main>
@@ -149,23 +180,24 @@ footer{text-align:center;color:var(--muted);padding:26px;border-top:2px dashed v
         <dt>Customer</dt><dd id="rcust"></dd>
         <dt>Email</dt><dd id="rmail"></dd>
         <dt>Paid with</dt><dd id="rpay"></dd>
-        <dt>Licensed laptop</dt><dd id="rdev"></dd>
+        <dt>Bought on</dt><dd id="rdev"></dd>
       </dl>
       <div class="stitch"></div>
-      <div class="line"><b id="rname"></b><span id="rprice"></span></div>
-      <small id="rgenre" style="color:#6b6d8a"></small>
+      <div id="ritems"></div>
+      
       <div class="stitch"></div>
       <div class="rs"><span>Subtotal</span><span id="rsub"></span></div>
       <div class="rs"><span>VAT (7.5%)</span><span id="rtax"></span></div>
       <div class="rt"><span>Total paid</span><span id="rtotal"></span></div>
       <div class="stitch"></div>
-      <div class="key"><small>Your game key</small><span id="rkey"></span></div>
+      
       <p style="text-align:center;color:#6b6d8a;font-size:.78rem;margin:14px 0 0">Questions? support@softtunic.com</p>
     </div>
     <div class="actions">
       <button class="primary" id="pdf">Download PDF receipt</button>
-      <button class="primary" id="dl">Download game</button>
+      
     </div>
+    <div class="panel" style="max-width:380px;margin:14px auto 0"><h2>Your downloads</h2><div id="dls"></div></div>
     <p id="dstate" class="note" style="text-align:center"></p>
     <p style="text-align:center"><button class="ghost" id="fake" style="font-size:.85rem;padding:7px 14px"></button></p>
   </section>
@@ -185,11 +217,13 @@ footer{text-align:center;color:var(--muted);padding:26px;border-top:2px dashed v
       <span class="tag" id="mtag"></span>
       <p id="mdesc"></p>
       <div class="stats"><div><small>Downloads</small><b id="mdl"></b></div><div><small>Price</small><b id="mprice"></b></div></div>
-      <div class="mactions"><button class="ghost" id="mclose">Close</button><button class="primary" id="mbuy">Purchase</button></div>
+      <div class="qty"><span>Quantity</span><div class="stepper"><button type="button" id="mminus" aria-label="Fewer">&minus;</button><output id="mq">1</output><button type="button" id="mplus" aria-label="More">+</button></div></div>
+      <div class="mactions"><button class="ghost" id="mclose">Close</button><button class="ghost" id="madd">Add to cart</button><button class="primary" id="mbuy">Buy now</button></div>
     </div>
   </div>
 </div>
 
+<div class="toast" id="toast" role="status"></div>
 <div class="overlay" id="proc"><div class="proc"><div class="spin"></div><b>Processing your payment securely…</b><div class="tag">Please do not close this page.</div></div></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
@@ -243,6 +277,16 @@ function deviceId(){
 }
 function makeKey(){var c='ABCDEFGHJKLMNPQRSTUVWXYZ23456789',k=[];for(var i=0;i<4;i++){var t='';for(var j=0;j<4;j++)t+=c[Math.floor(Math.random()*c.length)];k.push(t)}return k.join('-')}
 
+/* ===== cart ===== */
+var MAXQ=10,byName={};games.forEach(function(g){byName[g.n]=g});
+function getCart(){try{return JSON.parse(localStorage.getItem('st_cart')||'[]')}catch(e){return[]}}
+function setCart(c){try{localStorage.setItem('st_cart',JSON.stringify(c))}catch(e){}badge()}
+function cartLines(){return getCart().map(function(l){return{g:byName[l.n],q:l.q}}).filter(function(l){return l.g})}
+function cartTotals(){var sub=0;cartLines().forEach(function(l){sub+=l.g.p*l.q});var tax=Math.round(sub*TAX);return{sub:sub,tax:tax,total:sub+tax}}
+function badge(){var n=cartLines().reduce(function(s,l){return s+l.q},0),b=$('cbadge');b.textContent=n;b.hidden=!n}
+function toast(m){var t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(function(){t.classList.remove('show')},1800)}
+function addToCart(name,q){var c=getCart(),l=c.filter(function(x){return x.n===name})[0];if(l)l.q=Math.min(MAXQ,l.q+q);else c.push({n:name,q:Math.min(MAXQ,q)});setCart(c)}
+
 /* ===== games page ===== */
 var PAGE=24,st={q:'',g:'All',s:'f',n:PAGE},grid=$('grid'),ov=$('overlay');
 function view(){
@@ -273,7 +317,11 @@ grid.addEventListener('click',function(e){
   $('mcover').style.cssText=coverStyle(x);$('micon').textContent=ICON[x.g];
   $('mname').textContent=x.n;$('mtag').textContent=x.g+' · '+x.y;$('mdesc').textContent=x.d;
   $('mdl').textContent=fmtN(x.dl)+' downloads';$('mprice').textContent=naira(x.p);
-  $('mbuy').onclick=function(){location.hash='#/checkout/'+x.id};
+  var mq=1;$('mq').textContent=1;
+  $('mminus').onclick=function(){mq=Math.max(1,mq-1);$('mq').textContent=mq};
+  $('mplus').onclick=function(){mq=Math.min(MAXQ,mq+1);$('mq').textContent=mq};
+  $('madd').onclick=function(){addToCart(x.n,mq);ov.classList.remove('open');toast(mq+' × '+x.n+' added to cart')};
+  $('mbuy').onclick=function(){addToCart(x.n,mq);location.hash='#/checkout'};
   ov.classList.add('open');$('mbuy').focus();
 });
 $('mclose').onclick=function(){ov.classList.remove('open')};
@@ -281,19 +329,37 @@ ov.addEventListener('click',function(e){if(e.target===ov)ov.classList.remove('op
 document.addEventListener('keydown',function(e){if(e.key==='Escape')ov.classList.remove('open')});
 render();
 
+/* ===== cart page ===== */
+function showCart(){
+  var L=cartLines(),t=cartTotals();
+  $('clist').innerHTML=L.length?L.map(function(l){var g=l.g,n=esc(g.n);
+    return '<div class="crow"><div class="cthumb" style="'+coverStyle(g)+'">'+ICON[g.g]+'</div><div><b>'+n+'</b><div class="tag">'+g.g+' · '+naira(g.p)+' each</div></div>'+
+      '<div class="stepper"><button type="button" data-a="dec" data-n="'+n+'" aria-label="Fewer">&minus;</button><output>'+l.q+'</output><button type="button" data-a="inc" data-n="'+n+'" aria-label="More">+</button></div>'+
+      '<div class="lt">'+naira(g.p*l.q)+'</div><button type="button" class="ghost rm" data-a="rm" data-n="'+n+'">Remove</button></div>';
+  }).join(''):'<p style="color:var(--muted);margin:0">Your cart is empty. <a href="#/">Browse games</a></p>';
+  $('ksub').textContent=naira(t.sub);$('ktax').textContent=naira(t.tax);$('ktotal').textContent=naira(t.total);
+  $('kgo').hidden=!L.length;
+}
+$('clist').addEventListener('click',function(e){
+  var b=e.target.closest('button[data-a]');if(!b)return;
+  var c=getCart(),l=c.filter(function(x){return x.n===b.dataset.n})[0];if(!l)return;
+  if(b.dataset.a==='inc')l.q=Math.min(MAXQ,l.q+1);else if(b.dataset.a==='dec')l.q=Math.max(1,l.q-1);else c=c.filter(function(x){return x!==l});
+  setCart(c);showCart();
+});
+
 /* ===== checkout page ===== */
-function showCheckout(id){var g=games[id];if(!g){location.replace('#/');return}$('form').reset();$('err').hidden=true;$('proc').classList.remove('open');
-  var sub=g.p,tax=Math.round(sub*TAX),total=sub+tax;
-  $('ccover').style.cssText=coverStyle(g)+';border-radius:12px;margin-bottom:12px';$('cicon').textContent=ICON[g.g];
-  $('cname').textContent=g.n;$('ctag').textContent=g.g+' · '+g.y;
-  $('csub').textContent=naira(sub);$('ctax').textContent=naira(tax);$('ctotal').textContent=naira(total);
-  $('pay').textContent='Pay '+naira(total);$('cdev').textContent=deviceId();
+function showCheckout(){
+  var L=cartLines(),t=cartTotals();
+  if(!L.length){location.replace('#/cart');return false}
+  $('form').reset();$('err').hidden=true;$('proc').classList.remove('open');
+  $('clines').innerHTML=L.map(function(l){return '<div class="sumrow"><span>'+esc(l.g.n)+' × '+l.q+'</span><span>'+naira(l.g.p*l.q)+'</span></div>'}).join('');
+  $('csub').textContent=naira(t.sub);$('ctax').textContent=naira(t.tax);$('ctotal').textContent=naira(t.total);
+  $('pay').textContent='Pay '+naira(t.total);
 
   $('card').oninput=function(e){var d=e.target.value.replace(/\D/g,'').slice(0,16);e.target.value=d.replace(/(.{4})/g,'$1 ').trim()};
   $('exp').oninput=function(e){var d=e.target.value.replace(/\D/g,'').slice(0,4);e.target.value=d.length>2?d.slice(0,2)+'/'+d.slice(2):d};
   $('cvv').oninput=function(e){e.target.value=e.target.value.replace(/\D/g,'').slice(0,4)};
   $('fill').onclick=function(){$('name').value='Ada Obi';$('phone').value='08012345678';$('email').value='ada@example.com';$('bank').value='GTBank';$('card').value='4242 4242 4242 4242';$('exp').value='12/30';$('cvv').value='123';$('terms').checked=true};
-
   function luhn(n){var s=0,alt=false;for(var i=n.length-1;i>=0;i--){var d=+n[i];if(alt){d*=2;if(d>9)d-=9}s+=d;alt=!alt}return s%10===0}
   $('form').onsubmit=function(e){
     e.preventDefault();
@@ -309,47 +375,62 @@ function showCheckout(id){var g=games[id];if(!g){location.replace('#/');return}$
     var box=$('err');
     if(errs.length){box.hidden=false;box.innerHTML='<ul><li>'+errs.join('</li><li>')+'</li></ul>';box.scrollIntoView({block:'center'});return}
     box.hidden=true;
-    var order={no:'ST-'+Math.floor(100000+Math.random()*900000),gid:g.id,name:g.n,genre:g.g,year:g.y,price:sub,tax:tax,total:total,
-      customer:$('name').value.trim(),email:$('email').value.trim(),bank:$('bank').value,last4:num.slice(-4),
-      date:new Date().toISOString(),key:makeKey(),device:deviceId()};
+    var order={no:'ST-'+Math.floor(100000+Math.random()*900000),
+      items:L.map(function(l){var ks=[];for(var i=0;i<l.q;i++)ks.push({k:makeKey(),d:null});return{name:l.g.n,genre:l.g.g,year:l.g.y,price:l.g.p,qty:l.q,keys:ks}}),
+      sub:t.sub,tax:t.tax,total:t.total,customer:$('name').value.trim(),email:$('email').value.trim(),bank:$('bank').value,last4:num.slice(-4),
+      date:new Date().toISOString(),device:deviceId()};
     // Card number and CVV are cleared and never stored.
     $('card').value='';$('cvv').value='';$('exp').value='';
     $('proc').classList.add('open');
-    setTimeout(function(){saveOrder(order);location.hash='#/receipt/'+order.no},2200);
+    setTimeout(function(){saveOrder(order);setCart([]);location.hash='#/receipt/'+order.no},2200);
   };
 }
 
 /* ===== receipt page ===== */
-function showReceipt(oid){$('one').hidden=true;$('many').hidden=true;var list=getOrders();
-var o=list.filter(function(x){return x.no===oid})[0];
-if(!oid){
-  $('many').hidden=false;
-  $('plist').innerHTML=list.length?list.map(function(x){return '<div class="order"><span><b>'+esc(x.name)+'</b><br><span class="tag">'+x.no+' · '+naira(x.total)+'</span></span><a href="#/receipt/'+x.no+'">View receipt</a></div>'}).join(''):'<p style="color:var(--muted)">You have not bought any games on this laptop yet. <a href="#/">Browse games</a></p>';
-}else if(!o){
-  $('many').hidden=false;$('plist').innerHTML='<p>We could not find that receipt on this device. <a href="#/receipt">See your purchases</a></p>';
-}else{
+function normOrder(o){
+  if(!o.items){o.items=[{name:o.name,genre:o.genre,year:o.year,price:o.price,qty:1,keys:[{k:o.key,d:o.device}]}];o.sub=o.price}
+  return o;
+}
+function showReceipt(oid){
+  $('one').hidden=true;$('many').hidden=true;
+  var list=getOrders().map(normOrder),o=list.filter(function(x){return x.no===oid})[0];
+  if(!oid){
+    $('many').hidden=false;
+    $('plist').innerHTML=list.length?list.map(function(x){var n=x.items.reduce(function(s,i){return s+i.qty},0);
+      return '<div class="order"><span><b>'+esc(x.items[0].name)+(x.items.length>1?' + '+(x.items.length-1)+' more':'')+'</b><br><span class="tag">'+x.no+' · '+n+' licence'+(n>1?'s':'')+' · '+naira(x.total)+'</span></span><a href="#/receipt/'+x.no+'">View receipt</a></div>'}).join('')
+      :'<p style="color:var(--muted)">You have not bought any games on this laptop yet. <a href="#/">Browse games</a></p>';
+    return;
+  }
+  if(!o){$('many').hidden=false;$('plist').innerHTML='<p>We could not find that receipt on this device. <a href="#/receipt">See your purchases</a></p>';return}
   $('one').hidden=false;
-  var d=new Date(o.date);
+  var d=new Date(o.date),dev=deviceId(),fake=!!sessionStorage.getItem('st_fake');
   $('rno').textContent=o.no;
   $('rdate').textContent=d.toLocaleDateString('en-NG',{day:'numeric',month:'short',year:'numeric'})+', '+d.toLocaleTimeString('en-NG',{hour:'2-digit',minute:'2-digit'});
   $('rcust').textContent=o.customer;$('rmail').textContent=o.email;
   $('rpay').textContent=o.bank+' card ending '+o.last4;$('rdev').textContent=o.device;
-  $('rname').textContent=o.name;$('rgenre').textContent=o.genre+' · '+o.year+' · 1 licence';
-  $('rprice').textContent=naira(o.price);$('rsub').textContent=naira(o.price);$('rtax').textContent=naira(o.tax);$('rtotal').textContent=naira(o.total);
-  $('rkey').textContent=o.key;
-
-  var mine=deviceId()===o.device,fake=!!sessionStorage.getItem('st_fake');
-  $('dstate').textContent=mine?'This game is licensed to this laptop, so you can download it here.':'This licence is locked to another laptop ('+o.device+'). It cannot be downloaded here.';
-  $('dstate').style.color=mine?'var(--ok)':'var(--bad)';
-  $('dl').disabled=!mine;$('dl').style.opacity=mine?1:.45;
+  $('ritems').innerHTML=o.items.map(function(i){
+    return '<div class="line"><b>'+esc(i.name)+(i.qty>1?' × '+i.qty:'')+'</b><span>'+naira(i.price*i.qty)+'</span></div><small style="color:#6b6d8a">'+esc(i.genre)+' · '+i.year+' · '+naira(i.price)+' each</small>'+
+      '<div class="key" style="margin:8px 0 12px"><small>Game key'+(i.qty>1?'s':'')+'</small>'+i.keys.map(function(k){return k.k}).join('<br>')+'</div>';
+  }).join('');
+  $('rsub').textContent=naira(o.sub);$('rtax').textContent=naira(o.tax);$('rtotal').textContent=naira(o.total);
+  $('dstate').textContent='Each key locks to the first laptop that downloads it.';
   $('fake').textContent=fake?'Demo: go back to my real laptop':'Demo: pretend I am on a different laptop';
   $('fake').onclick=function(){if(fake)sessionStorage.removeItem('st_fake');else sessionStorage.setItem('st_fake','LAP-OTHER-'+Math.random().toString(36).slice(2,7).toUpperCase());location.reload()};
-
-  $('dl').onclick=function(){
-    if(!mine)return;
-    var txt='Soft Tunic demo installer\nGame: '+o.name+'\nLicence key: '+o.key+'\nLocked to: '+o.device+'\n';
+  function drawDownloads(){
+    $('dls').innerHTML=o.items.map(function(it,a){return it.keys.map(function(k,b){
+      var st=k.d===null?'<button class="primary" data-a="'+a+'" data-b="'+b+'">Download</button>':k.d===dev?'<button class="ghost" data-a="'+a+'" data-b="'+b+'">Download again</button>':'<span class="tag" style="color:var(--bad)">Locked to another laptop</span>';
+      return '<div class="order"><span><b>'+esc(it.name)+'</b><br><span class="tag">'+k.k+'</span></span>'+st+'</div>';
+    }).join('')}).join('');
+  }
+  drawDownloads();
+  $('dls').onclick=function(e){
+    var b=e.target.closest('button[data-a]');if(!b)return;
+    var it=o.items[+b.dataset.a],k=it.keys[+b.dataset.b];
+    if(k.d===null){k.d=dev;try{localStorage.setItem('st_orders',JSON.stringify(list))}catch(x){}}
+    if(k.d!==dev)return;
+    var txt='Soft Tunic demo installer\nGame: '+it.name+'\nLicence key: '+k.k+'\nLocked to: '+dev+'\n';
     var a=document.createElement('a');a.href=URL.createObjectURL(new Blob([txt],{type:'text/plain'}));
-    a.download=o.name.replace(/[^\w]+/g,'-')+'-installer.txt';a.click();
+    a.download=it.name.replace(/[^\w]+/g,'-')+'-installer.txt';a.click();drawDownloads();
   };
   $('pdf').onclick=function(){
     if(!window.html2canvas||!window.jspdf){window.print();return}
@@ -360,22 +441,21 @@ if(!oid){
     });
   };
 }
-}
 
-/* Router: one file, three "pages" switched by the URL hash */
+/* Router: one file, several "pages" switched by the URL hash */
 function route(){
   var p=location.hash.replace(/^#\/?/,'').split('/');
-  var v=p[0]==='checkout'?'checkout':p[0]==='receipt'?'receipt':'home';
-  if(v==='checkout'&&!games[+p[1]]){location.replace('#/');return}
-  ['home','checkout','receipt'].forEach(function(n){$('v-'+n).hidden=true});
+  var v=['checkout','receipt','cart'].indexOf(p[0])>-1?p[0]:'home';
+  ['home','checkout','receipt','cart'].forEach(function(n){$('v-'+n).hidden=true});
   $('overlay').classList.remove('open');
-  if(v==='checkout')showCheckout(+p[1]);
+  badge();
+  if(v==='checkout'&&showCheckout()===false)return;
+  if(v==='cart')showCart();
   if(v==='receipt')showReceipt(p[1]||'');
   $('v-'+v).hidden=false;window.scrollTo(0,0);
 }
 window.addEventListener('hashchange',route);
 route();
-
 </script>
 </body>
 </html>
